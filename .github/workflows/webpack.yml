@@ -1,0 +1,65 @@
+name: Publish Page
+
+on:
+  push:
+    branches: [ "release" ]
+
+  pull_request:
+    branches: [ "release" ]
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [14.x, 16.x, 18.x]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Build
+      run: |
+        npm install
+        npx webpack
+
+    - name: Archive artifact
+      shell: /usr/bin/sh -e {0}
+      run: |
+        chmod -c -R +rX "$INPUT_PATH" | while read line; do
+        echo "::warning title=Invalid file permissions automatically fixed::$line"
+        done
+        tar \
+        --dereference --hard-dereference \
+        --directory "$INPUT_PATH" \
+        -cvf "$RUNNER_TEMP/artifact.tar" \
+        --exclude=.git \
+        --exclude=.github \
+        .
+      env:
+        INPUT_PATH: ./dist
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@main
+      with: 
+        name: github-pages
+        path: ${{ runner.temp }}/artifact.tar
+        retention-days: 1
+
+  deploy: 
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy
+        uses: actions/deploy-pages@v1
+
