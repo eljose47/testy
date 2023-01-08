@@ -21,8 +21,6 @@ const LiveSince = styled.div`
   margin-left: auto;
 `;
 
-const TextBlock = styled.div``;
-
 const Channel = styled.div`
   font-size: 28px;
   font-weight: 600px;
@@ -34,8 +32,8 @@ const Category = styled.div`
 `;
 
 const clientId = "l3pj0aepy2pt31r2xv2bfyp2lebryx";
-// const redirect_uri = "https://eljose47.github.io/twitch";
-const redirect_uri = "http://localhost:3000";
+const redirect_uri = "https://eljose47.github.io/twitch";
+// const redirect_uri = "http://localhost:3000";
 
 interface User {
   id: string;
