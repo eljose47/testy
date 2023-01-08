@@ -17,12 +17,6 @@ const App: React.FunctionComponent<AppProps> = (props) => {
     return output;
   }, []);
 
-  const twitchAuthUrl = new URL("https://id.twitch.tv/oauth2/authorize");
-  twitchAuthUrl.searchParams.append("client_id", clientId);
-  twitchAuthUrl.searchParams.append("redirect_uri", redirect_uri);
-  twitchAuthUrl.searchParams.append("response_type", "token");
-  twitchAuthUrl.searchParams.append("scope", encodeURI("user:read:follows"));
-
   const headers = {
     Authorization: `Bearer ${access_token}`,
     "Client-Id": clientId,
@@ -53,17 +47,23 @@ const App: React.FunctionComponent<AppProps> = (props) => {
     { enabled: !!user }
   );
 
+  const twitchAuthUrl = new URL("https://id.twitch.tv/oauth2/authorize");
+  twitchAuthUrl.searchParams.append("client_id", clientId);
+  twitchAuthUrl.searchParams.append("redirect_uri", redirect_uri);
+  twitchAuthUrl.searchParams.append("response_type", "token");
+  twitchAuthUrl.searchParams.append("scope", "user:read:follows");
+
   return (
     <>
       {access_token ? (
         <>
           <h1>Followed Channels</h1>
           {data && (
-            <li>
+            <ul>
               {data.map((channel: any) => (
-                <ul key={channel.user_id}>{channel.user_name}</ul>
+                <li key={channel.user_id}>{channel.user_name}</li>
               ))}
-            </li>
+            </ul>
           )}
         </>
       ) : (
