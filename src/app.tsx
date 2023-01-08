@@ -159,7 +159,7 @@ const App: React.FunctionComponent<AppProps> = (props) => {
       ) : (
         <>
           <h1>Hallo</h1>
-          <a href={twitchAuthUrl.toString()}>Connect with Twitch</a>;
+          <a href={twitchAuthUrl.toString()}>Connect with Twitch</a>
         </>
       )}
     </>
