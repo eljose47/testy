@@ -1,5 +1,13 @@
 import * as React from "react";
 import { useQuery } from "react-query";
+import styled from "styled-components";
+
+const List = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const Entry = styled.div``;
 
 const clientId = "l3pj0aepy2pt31r2xv2bfyp2lebryx";
 const redirect_uri = "https://eljose47.github.io/twitch";
@@ -47,6 +55,8 @@ const App: React.FunctionComponent<AppProps> = (props) => {
     { enabled: !!user }
   );
 
+  console.log(data);
+
   const twitchAuthUrl = new URL("https://id.twitch.tv/oauth2/authorize");
   twitchAuthUrl.searchParams.append("client_id", clientId);
   twitchAuthUrl.searchParams.append("redirect_uri", redirect_uri);
@@ -59,11 +69,26 @@ const App: React.FunctionComponent<AppProps> = (props) => {
         <>
           <h1>Followed Channels</h1>
           {data && (
-            <ul>
-              {data.map((channel: any) => (
-                <li key={channel.user_id}>{channel.user_name}</li>
-              ))}
-            </ul>
+            <List>
+              {data.map((channel: any) => {
+                let thumbnail = channel.thumbnail_url as string;
+                thumbnail = thumbnail.replace("{width}", "160");
+                thumbnail = thumbnail.replace("{height}", "90");
+
+                return (
+                  <Entry key={channel.user_id}>
+                    <h2>{channel.user_name}</h2>
+                    <h3>Category: {channel.game_name}</h3>
+                    <a href={`https://twitch.tv/${channel.user_login}`}>
+                      <img
+                        alt={`${channel.user_name} thumbnail`}
+                        src={thumbnail}
+                      />
+                    </a>
+                  </Entry>
+                );
+              })}
+            </List>
           )}
         </>
       ) : (
