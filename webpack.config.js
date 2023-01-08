@@ -29,7 +29,7 @@ module.exports = (env, argv) => {
     },
   };
 
-  if ((argv.mode = "development")) {
+  if ("mode" in arg && argv.mode === "development") {
     (output.devtool = "inline-source-map"),
       (output.devServer = {
         static: "./dist",
