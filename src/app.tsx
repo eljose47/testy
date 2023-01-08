@@ -66,7 +66,11 @@ const App: React.FunctionComponent<AppProps> = (props) => {
       fetch("https://api.twitch.tv/helix/users", {
         headers,
       }).then((e) => e.json().then((e) => e.data[0] as User)),
-    { enabled: !!access_token }
+    {
+      enabled: !!access_token,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    }
   );
 
   const { data } = useQuery(
@@ -104,7 +108,7 @@ const App: React.FunctionComponent<AppProps> = (props) => {
 
       return { followed: followedJson.data, users };
     },
-    { enabled: !!user }
+    { enabled: !!user, refetchInterval: 1000 * 60 }
   );
 
   const twitchAuthUrl = new URL("https://id.twitch.tv/oauth2/authorize");
@@ -128,15 +132,18 @@ const App: React.FunctionComponent<AppProps> = (props) => {
                 let profilePic = user?.profile_image_url;
                 profilePic = profilePic?.replace("300x300", "70x70");
 
-                const timePassedSinceStreamStart =
-                  (Date.now() - new Date(stream.started_at).valueOf()) /
-                  1000 /
-                  60 /
-                  60;
+                const millisceondsdSinceStreamStarted =
+                  Date.now() - new Date(stream.started_at).valueOf();
 
-                const hours = Math.floor(timePassedSinceStreamStart);
-                const minutesDecimal = timePassedSinceStreamStart % 1;
-                const minutes = minutesDecimal * 60;
+                const date = new Date(
+                  Date.now() - new Date(stream.started_at).valueOf()
+                );
+
+                const hours_minutes = date.toLocaleString(undefined, {
+                  timeZone: "UTC",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
 
                 return (
                   <Entry
@@ -152,9 +159,7 @@ const App: React.FunctionComponent<AppProps> = (props) => {
                       <Channel>{stream.user_name}</Channel>
                       <Category>{stream.game_name}</Category>
                     </div>
-                    <LiveSince>
-                      Live for: {hours}:{minutes.toFixed(0)}
-                    </LiveSince>
+                    <LiveSince>Live for: {hours_minutes}</LiveSince>
                   </Entry>
                 );
               })}
