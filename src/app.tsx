@@ -5,13 +5,45 @@ import styled from "styled-components";
 const List = styled.div`
   display: flex;
   flex-direction: column;
+  gap: 12px;
 `;
 
-const Entry = styled.div``;
+const Entry = styled.a`
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  height: 70px;
+  text-decoration: none;
+  color: inherit;
+`;
+
+const LiveSince = styled.div`
+  margin-left: auto;
+`;
+
+const TextBlock = styled.div``;
+
+const Channel = styled.div`
+  font-size: 28px;
+  font-weight: 600px;
+`;
+
+const Category = styled.div`
+  font-size: 26px;
+  font-weight: 300;
+`;
 
 const clientId = "l3pj0aepy2pt31r2xv2bfyp2lebryx";
-const redirect_uri = "https://eljose47.github.io/twitch";
-// const redirect_uri = "http://localhost:3000";
+// const redirect_uri = "https://eljose47.github.io/twitch";
+const redirect_uri = "http://localhost:3000";
+
+interface User {
+  id: string;
+  login: string;
+  display_name: string;
+  offline_image_url: string;
+  profile_image_url: string;
+}
 
 const App: React.FunctionComponent<AppProps> = (props) => {
   const { access_token } = React.useMemo(() => {
@@ -35,11 +67,11 @@ const App: React.FunctionComponent<AppProps> = (props) => {
     () =>
       fetch("https://api.twitch.tv/helix/users", {
         headers,
-      }).then((e) => e.json().then((e) => e.data[0])),
+      }).then((e) => e.json().then((e) => e.data[0] as User)),
     { enabled: !!access_token }
   );
 
-  const { data } = useQuery(
+  const { data: followed } = useQuery(
     "followed",
     async () => {
       const url = new URL("https://api.twitch.tv/helix/streams/followed");
@@ -55,7 +87,31 @@ const App: React.FunctionComponent<AppProps> = (props) => {
     { enabled: !!user }
   );
 
-  console.log(data);
+  const { data } = useQuery(
+    "users_followed",
+    async () => {
+      const url = new URL("https://api.twitch.tv/helix/users");
+      for (const stream of followed) {
+        url.searchParams.append("id", stream.user_id);
+      }
+
+      console.log("url", url.toString());
+
+      const response = await fetch(url, {
+        headers,
+      });
+
+      const users = await response
+        .json()
+        .then((output: { data: User[] }) =>
+          Object.fromEntries(output.data?.map((e) => [e.id, e]) ?? [])
+        );
+      return users;
+    },
+    { enabled: !!followed }
+  );
+
+  console.log({ followed, followed_users: data, user });
 
   const twitchAuthUrl = new URL("https://id.twitch.tv/oauth2/authorize");
   twitchAuthUrl.searchParams.append("client_id", clientId);
@@ -68,23 +124,42 @@ const App: React.FunctionComponent<AppProps> = (props) => {
       {access_token ? (
         <>
           <h1>Followed Channels</h1>
-          {data && (
+          {followed && (
             <List>
-              {data.map((channel: any) => {
-                let thumbnail = channel.thumbnail_url as string;
-                thumbnail = thumbnail.replace("{width}", "160");
-                thumbnail = thumbnail.replace("{height}", "90");
+              {followed.map((stream: any) => {
+                if (!data) {
+                  return null;
+                }
+                // let thumbnail = channel.thumbnail_url as string;
+                // thumbnail = thumbnail.replace("{width}", "160");
+                // thumbnail = thumbnail.replace("{height}", "90");
+
+                const user = data[stream.user_id];
+                let profilePic = user.profile_image_url;
+                profilePic = profilePic.replace("300x300", "70x70");
+
+                const timePassedSinceStreamStart =
+                  Date.now() - new Date(stream.started_at).valueOf();
 
                 return (
-                  <Entry key={channel.user_id}>
-                    <h2>{channel.user_name}</h2>
-                    <h3>Category: {channel.game_name}</h3>
-                    <a href={`https://twitch.tv/${channel.user_login}`}>
-                      <img
-                        alt={`${channel.user_name} thumbnail`}
-                        src={thumbnail}
-                      />
-                    </a>
+                  <Entry
+                    key={stream.user_id}
+                    href={`https://twitch.tv/${stream.user_login}`}
+                    target="_blank"
+                  >
+                    <img
+                      alt={`${stream.user_name} profile picture`}
+                      src={profilePic}
+                    />
+                    <div>
+                      <Channel>{stream.user_name}</Channel>
+                      <Category>{stream.game_name}</Category>
+                    </div>
+                    <LiveSince>
+                      Live for:{" "}
+                      {(timePassedSinceStreamStart / 1000 / 60).toFixed(0)}{" "}
+                      minutes
+                    </LiveSince>
                   </Entry>
                 );
               })}
