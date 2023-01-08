@@ -69,42 +69,42 @@ const App: React.FunctionComponent<AppProps> = (props) => {
     { enabled: !!access_token }
   );
 
-  const { data: followed } = useQuery(
+  const { data } = useQuery(
     "followed",
     async () => {
-      const url = new URL("https://api.twitch.tv/helix/streams/followed");
-      url.searchParams.append("user_id", user!.id);
+      const followedUrl = new URL(
+        "https://api.twitch.tv/helix/streams/followed"
+      );
+      followedUrl.searchParams.append("user_id", user!.id);
 
-      const response = await fetch(url, {
+      const folowedResponse = await fetch(followedUrl, {
         headers,
       });
 
-      const { data } = await response.json();
-      return data;
-    },
-    { enabled: !!user }
-  );
+      const followedJson = await folowedResponse.json();
 
-  const { data } = useQuery(
-    "users_followed",
-    async () => {
-      const url = new URL("https://api.twitch.tv/helix/users");
-      for (const stream of followed) {
-        url.searchParams.append("id", stream.user_id);
+      if (!folowedResponse.ok) {
+        throw followedJson;
       }
 
-      const response = await fetch(url, {
+      const usersUrl = new URL("https://api.twitch.tv/helix/users");
+      for (const stream of followedJson.data) {
+        usersUrl.searchParams.append("id", stream.user_id);
+      }
+
+      const usersResponse = await fetch(usersUrl, {
         headers,
       });
 
-      const users = await response
+      const users = await usersResponse
         .json()
         .then((output: { data: User[] }) =>
           Object.fromEntries(output.data?.map((e) => [e.id, e]) ?? [])
         );
-      return users;
+
+      return { followed: followedJson.data, users };
     },
-    { enabled: !!followed }
+    { enabled: !!user }
   );
 
   const twitchAuthUrl = new URL("https://id.twitch.tv/oauth2/authorize");
@@ -115,21 +115,28 @@ const App: React.FunctionComponent<AppProps> = (props) => {
 
   return (
     <>
+      <h1>Followed Channels</h1>
       {access_token ? (
         <>
-          <h1>Followed Channels</h1>
-          {followed && (
+          {data?.followed && (
             <List>
-              {followed.map((stream: any) => {
+              {data.followed.map((stream: any) => {
                 if (!data) {
                   return null;
                 }
-                const user = data[stream.user_id];
+                const user = data.users[stream.user_id];
                 let profilePic = user?.profile_image_url;
                 profilePic = profilePic?.replace("300x300", "70x70");
 
                 const timePassedSinceStreamStart =
-                  Date.now() - new Date(stream.started_at).valueOf();
+                  (Date.now() - new Date(stream.started_at).valueOf()) /
+                  1000 /
+                  60 /
+                  60;
+
+                const hours = Math.floor(timePassedSinceStreamStart);
+                const minutesDecimal = timePassedSinceStreamStart % 1;
+                const minutes = minutesDecimal * 60;
 
                 return (
                   <Entry
@@ -146,9 +153,7 @@ const App: React.FunctionComponent<AppProps> = (props) => {
                       <Category>{stream.game_name}</Category>
                     </div>
                     <LiveSince>
-                      Live for:{" "}
-                      {(timePassedSinceStreamStart / 1000 / 60).toFixed(0)}{" "}
-                      minutes
+                      Live for: {hours}:{minutes.toFixed(0)}
                     </LiveSince>
                   </Entry>
                 );
@@ -157,10 +162,7 @@ const App: React.FunctionComponent<AppProps> = (props) => {
           )}
         </>
       ) : (
-        <>
-          <h1>Hallo</h1>
-          <a href={twitchAuthUrl.toString()}>Connect with Twitch</a>
-        </>
+        <a href={twitchAuthUrl.toString()}>Connect with Twitch</a>
       )}
     </>
   );
