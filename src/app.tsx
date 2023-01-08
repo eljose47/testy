@@ -93,8 +93,6 @@ const App: React.FunctionComponent<AppProps> = (props) => {
         url.searchParams.append("id", stream.user_id);
       }
 
-      console.log("url", url.toString());
-
       const response = await fetch(url, {
         headers,
       });
@@ -108,8 +106,6 @@ const App: React.FunctionComponent<AppProps> = (props) => {
     },
     { enabled: !!followed }
   );
-
-  console.log({ followed, followed_users: data, user });
 
   const twitchAuthUrl = new URL("https://id.twitch.tv/oauth2/authorize");
   twitchAuthUrl.searchParams.append("client_id", clientId);
@@ -128,13 +124,9 @@ const App: React.FunctionComponent<AppProps> = (props) => {
                 if (!data) {
                   return null;
                 }
-                // let thumbnail = channel.thumbnail_url as string;
-                // thumbnail = thumbnail.replace("{width}", "160");
-                // thumbnail = thumbnail.replace("{height}", "90");
-
                 const user = data[stream.user_id];
-                let profilePic = user.profile_image_url;
-                profilePic = profilePic.replace("300x300", "70x70");
+                let profilePic = user?.profile_image_url;
+                profilePic = profilePic?.replace("300x300", "70x70");
 
                 const timePassedSinceStreamStart =
                   Date.now() - new Date(stream.started_at).valueOf();
