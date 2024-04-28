@@ -1,7 +1,9 @@
 const path = require("path"),
   HtmlPlugin = require("html-webpack-plugin");
 
-module.exports = (env, argv) => {
+const config = (env, argv) => {
+  //@ts-check
+  /** @type {import("webpack").Configuration}*/
   const output = {
     entry: "./src/index.tsx",
     module: {
@@ -27,15 +29,19 @@ module.exports = (env, argv) => {
       path: path.resolve(__dirname, "dist"),
       clean: true,
     },
+    mode: "production",
   };
 
   if ("mode" in argv && argv.mode === "development") {
-    (output.devtool = "inline-source-map"),
-      (output.devServer = {
-        static: "./dist",
-        port: env.port ?? 3000,
-      });
+    output.mode = "development";
+    output.devtool = "inline-source-map";
+    output.devServer = {
+      static: "./dist",
+      port: env.port ?? 3000,
+    };
   }
 
   return output;
 };
+
+module.exports = config;
